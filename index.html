@@ -147,76 +147,98 @@
         <p style="text-align: center; color: #64748b; margin-bottom: 24px;">Escanea o introduce el SKU para ver en qué tiendas se encuentra.</p>
         
         <div class="input-group">
-            <input type="text" id="skuInput" placeholder="Ej: 0/0101/001/500/42" onkeypress="if(event.key === 'Enter') buscarSKU()">
+            <input type="text" id="skuInput" placeholder="Ej: 0010100150042 (sin barras)" onkeypress="if(event.key === 'Enter') buscarSKU()">
             <button onclick="buscarSKU()">Buscar</button>
         </div>
 
         <div id="resultado"></div>
+        
+        <!-- Nuevo botón para descargar el archivo modificado -->
+        <div id="zonaDescarga" style="display: none; margin-top: 20px; text-align: center; border-top: 2px dashed #cbd5e1; padding-top: 20px;">
+            <p style="color: #b45309; font-size: 0.9rem; margin-bottom: 10px; font-weight: bold;">⚠️ Tienes cambios sin guardar</p>
+            <button onclick="descargarTXT()" style="background-color: #d97706; width: 100%;">📥 Descargar TXT Actualizado</button>
+            <p style="color: #64748b; font-size: 0.8rem; margin-top: 10px;">Sube este archivo a GitHub para guardar los cambios.</p>
+        </div>
     </div>
 
     <script>
-        // Enfocar el input nada más cargar la página
+        // Variables globales para mantener el archivo en memoria
+        let lineasTXT = [];
+        let cambiosPendientes = false;
+
+        // Cargamos el archivo nada más abrir la página, en lugar de en cada búsqueda
         window.onload = function() {
             document.getElementById('skuInput').focus();
+            cargarArchivoTXT();
         };
 
-        function buscarSKU() {
-            const inputElement = document.getElementById('skuInput');
-            const skuBuscado = inputElement.value.trim().toUpperCase();
-            const divResultado = document.getElementById('resultado');
-
-            // Limpiamos el input para el siguiente escaneo
-            inputElement.value = '';
-            inputElement.focus();
-
-            if (!skuBuscado) {
-                mostrarError('Por favor, escanea o introduce un SKU válido.');
-                return;
-            }
-
-            // Nombre de tu archivo txt. Le añadimos un parámetro aleatorio para evitar el caché
+        function cargarArchivoTXT() {
             const url = 'descuadres_html.txt?v=' + new Date().getTime();
-
             fetch(url)
                 .then(respuesta => {
                     if (!respuesta.ok) throw new Error('Archivo no encontrado');
                     return respuesta.text();
                 })
                 .then(texto => {
-                    const lineas = texto.split('\n');
-                    let resultadosEncontrados = [];
-
-                    // Empezamos el bucle en 1 para saltarnos la primera línea (cabecera: tsa;sku;...)
-                    for (let i = 1; i < lineas.length; i++) {
-                        const linea = lineas[i].trim();
-                        if (!linea) continue; // Saltamos líneas en blanco
-
-                        // Separamos por punto y coma (;)
-                        const partes = linea.split(';');
-                        
-                        // Según tu archivo: tsa[0] ; sku[1] ; unidades[2] ; ok[3] ; comentario[4]
-                        if (partes.length >= 2) {
-                            const skuFila = partes[1].trim().toUpperCase();
-
-                            if (skuFila === skuBuscado) {
-                                resultadosEncontrados.push({
-                                    tienda: partes[0] || '-',
-                                    unidades: partes[2] || '0',
-                                    comentario: partes[4] || ''
-                                });
-                            }
-                        }
-                    }
-
-                    if (resultadosEncontrados.length > 0) {
-                        mostrarTablaResultados(skuBuscado, resultadosEncontrados);
-                    } else {
-                        mostrarError(`No se ha encontrado el SKU: <strong>${skuBuscado}</strong>`);
-                    }
+                    // Guardamos todas las líneas en memoria
+                    lineasTXT = texto.split('\n');
                 })
                 .catch(error => {
-                    mostrarError(`<strong>Error de conexión.</strong> No se pudo leer "descuadres_html.txt". Revisa que esté en la misma carpeta.`);
+                    mostrarError(`<strong>Error:</strong> No se pudo cargar "descuadres_html.txt".`);
                 });
+        }
+
+        function buscarSKU() {
+            const inputElement = document.getElementById('skuInput');
+            const skuOriginal = inputElement.value.trim().toUpperCase();
+            const skuBuscadoLimpio = skuOriginal.replace(/\//g, ''); 
+            const divResultado = document.getElementById('resultado');
+
+            // Limpiamos el input para el siguiente escaneo
+            inputElement.value = '';
+            inputElement.focus();
+
+            if (!skuBuscadoLimpio) {
+                mostrarError('Por favor, escanea o introduce un SKU válido.');
+                return;
+            }
+
+            if (lineasTXT.length === 0) {
+                mostrarError('El archivo de datos aún no se ha cargado o está vacío.');
+                return;
+            }
+
+            let resultadosEncontrados = [];
+
+            // Empezamos en 1 para saltarnos la cabecera
+            for (let i = 1; i < lineasTXT.length; i++) {
+                const linea = lineasTXT[i].trim();
+                if (!linea) continue;
+
+                const partes = linea.split(';');
+                
+                if (partes.length >= 2) {
+                    const skuFilaOriginal = partes[1].trim().toUpperCase();
+                    const skuFilaLimpio = skuFilaOriginal.replace(/\//g, '');
+
+                    if (skuFilaLimpio === skuBuscadoLimpio) {
+                        resultadosEncontrados.push({
+                            indiceOriginal: i, // Guardamos en qué línea exacta del TXT está
+                            tienda: partes[0] || '-',
+                            unidades: partes[2] || '0',
+                            ok: partes[3] || '0', // Columna OK
+                            comentario: partes[4] || '',
+                            skuBonito: skuFilaOriginal
+                        });
+                    }
+                }
+            }
+
+            if (resultadosEncontrados.length > 0) {
+                mostrarTablaResultados(resultadosEncontrados[0].skuBonito, resultadosEncontrados);
+            } else {
+                mostrarError(`No se ha encontrado el SKU: <strong>${skuOriginal}</strong>`);
+            }
         }
 
         function mostrarTablaResultados(sku, datos) {
@@ -233,8 +255,9 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Tienda (TSA)</th>
+                            <th>Tienda</th>
                             <th>Uds</th>
+                            <th style="text-align: center;">Estado</th>
                             <th>Comentarios</th>
                         </tr>
                     </thead>
@@ -243,10 +266,21 @@
 
             datos.forEach(dato => {
                 totalUnidades += parseInt(dato.unidades) || 0;
+                
+                // Lógica del botón OK
+                let botonAccion = '';
+                if (dato.ok === '3') {
+                    botonAccion = '<span style="color: #16a34a; font-weight: bold;">✓ Listo</span>';
+                } else {
+                    // Si no es 3, mostramos el botón. Le pasamos la línea exacta que debe editar
+                    botonAccion = `<button onclick="marcarComoOK(${dato.indiceOriginal}, '${sku}')" style="padding: 6px 12px; font-size: 14px; background-color: #10b981; width: auto;">OK</button>`;
+                }
+
                 html += `
                     <tr>
                         <td><strong>${dato.tienda}</strong></td>
                         <td>${dato.unidades}</td>
+                        <td style="text-align: center;">${botonAccion}</td>
                         <td style="font-size: 0.85rem; color: #64748b;">${dato.comentario}</td>
                     </tr>
                 `;
@@ -259,12 +293,61 @@
                             <td style="text-align: right;">TOTAL:</td>
                             <td>${totalUnidades}</td>
                             <td></td>
+                            <td></td>
                         </tr>
                     </tfoot>
                 </table>
             `;
 
             divResultado.innerHTML = html;
+        }
+
+        // Función que se ejecuta al pulsar el botón OK
+        function marcarComoOK(indice, skuBuscado) {
+            // 1. Buscamos la línea exacta y la separamos
+            let partes = lineasTXT[indice].split(';');
+            
+            // Nos aseguramos de que tenga 5 columnas por si el txt vino cortado
+            while(partes.length < 5) partes.push(""); 
+            
+            // 2. Cambiamos el valor de la columna OK (índice 3) a "3"
+            partes[3] = "3"; 
+            
+            // 3. Volvemos a juntar la línea con los puntos y comas y la guardamos en memoria
+            lineasTXT[indice] = partes.join(';'); 
+            
+            // 4. Mostramos el botón de descargar porque hay cambios nuevos
+            document.getElementById('zonaDescarga').style.display = 'block';
+            cambiosPendientes = true;
+
+            // 5. Volvemos a lanzar la búsqueda para que la tabla se actualice visualmente (cambie OK por "✓ Listo")
+            document.getElementById('skuInput').value = skuBuscado;
+            buscarSKU();
+        }
+
+        // Función para descargar el archivo actualizado
+        function descargarTXT() {
+            // Juntamos todas las líneas de nuevo con saltos de línea
+            const contenido = lineasTXT.join('\n');
+            
+            // Creamos un archivo virtual en el navegador
+            const blob = new Blob([contenido], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            
+            // Forzamos la descarga del archivo
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'descuadres_html.txt'; // Mismo nombre para sobreescribir fácilmente
+            document.body.appendChild(a);
+            a.click();
+            
+            // Limpiamos
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            // Ocultamos el aviso de descarga
+            document.getElementById('zonaDescarga').style.display = 'none';
+            cambiosPendientes = false;
         }
 
         function mostrarError(mensaje) {
