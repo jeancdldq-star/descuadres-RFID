@@ -3,32 +3,275 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test IT Firewall</title>
-</head>
-<body style="background-color: #1e293b; color: white; font-family: sans-serif; text-align: center; padding: 50px;">
+    <title>Buscador de SKUs en Tiendas</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --border: #e2e8f0;
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 20px; 
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
 
-    <h2>Radar de Conexión Firestore</h2>
-    <button onclick="probarConexion()" style="padding: 20px; font-size: 20px; background-color: #3b82f6; color: white; border: none; border-radius: 10px; cursor: pointer; margin-top: 20px;">
-        📡 Lanzar Test
-    </button>
-    
-    <h1 id="resultado" style="margin-top: 40px; font-size: 30px;">Esperando...</h1>
+        .container {
+            background-color: var(--card-bg);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #0f172a;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input { 
+            flex: 1;
+            padding: 12px 16px; 
+            font-size: 16px; 
+            border-radius: 8px;
+            border: 1px solid var(--border); 
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        button { 
+            padding: 12px 24px; 
+            background-color: var(--primary); 
+            color: white; 
+            border: none; 
+            border-radius: 8px;
+            cursor: pointer; 
+            font-weight: 600;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+
+        button:hover { 
+            background-color: var(--primary-hover); 
+        }
+
+        #resultado { 
+            display: none; 
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        /* Estilos de la tabla de resultados */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: #f1f5f9;
+            font-weight: 600;
+            color: #334155;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .mensaje-error {
+            background-color: #fef2f2;
+            color: #991b1b;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #fecaca;
+            text-align: center;
+        }
+
+        .mensaje-info {
+            padding: 16px;
+            background-color: #f0fdf4;
+            color: #166534;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+        }
+
+        /* Para que se vea bien en móviles pequeños */
+        @media (max-width: 480px) {
+            .input-group {
+                flex-direction: column;
+            }
+            button {
+                width: 100%;
+            }
+            th, td {
+                padding: 10px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Buscador de Descuadres</h2>
+        <p style="text-align: center; color: #64748b; margin-bottom: 24px;">Escanea o introduce el SKU para ver en qué tiendas se encuentra.</p>
+        
+        <div class="input-group">
+            <input type="text" id="skuInput" placeholder="Ej: 0/0101/001/500/42" onkeypress="if(event.key === 'Enter') buscarSKU()">
+            <button onclick="buscarSKU()">Buscar</button>
+        </div>
+
+        <div id="resultado"></div>
+    </div>
 
     <script>
-        async function probarConexion() {
-            document.getElementById("resultado").innerText = "Probando...";
-            document.getElementById("resultado").style.color = "yellow";
-            
-            try {
-                // Intentamos golpear el servidor base de Firestore
-                await fetch('https://firestore.googleapis.com/', { mode: 'no-cors' });
-                
-                document.getElementById("resultado").innerText = "✅ ¡CONEXIÓN ABIERTA! IT no lo bloquea.";
-                document.getElementById("resultado").style.color = "#22c55e"; // Verde
-            } catch (error) {
-                document.getElementById("resultado").innerText = "❌ BLOQUEADO. El firewall de IT corta la señal.";
-                document.getElementById("resultado").style.color = "#ef4444"; // Rojo
+        // Enfocar el input nada más cargar la página
+        window.onload = function() {
+            document.getElementById('skuInput').focus();
+        };
+
+        function buscarSKU() {
+            const inputElement = document.getElementById('skuInput');
+            const skuBuscado = inputElement.value.trim().toUpperCase();
+            const divResultado = document.getElementById('resultado');
+
+            // Limpiamos el input para el siguiente escaneo
+            inputElement.value = '';
+            inputElement.focus();
+
+            if (!skuBuscado) {
+                mostrarError('Por favor, escanea o introduce un SKU válido.');
+                return;
             }
+
+            // Nombre de tu archivo txt. Le añadimos un parámetro aleatorio para evitar el caché
+            const url = 'descuadres_html.txt?v=' + new Date().getTime();
+
+            fetch(url)
+                .then(respuesta => {
+                    if (!respuesta.ok) throw new Error('Archivo no encontrado');
+                    return respuesta.text();
+                })
+                .then(texto => {
+                    const lineas = texto.split('\n');
+                    let resultadosEncontrados = [];
+
+                    // Empezamos el bucle en 1 para saltarnos la primera línea (cabecera: tsa;sku;...)
+                    for (let i = 1; i < lineas.length; i++) {
+                        const linea = lineas[i].trim();
+                        if (!linea) continue; // Saltamos líneas en blanco
+
+                        // Separamos por punto y coma (;)
+                        const partes = linea.split(';');
+                        
+                        // Según tu archivo: tsa[0] ; sku[1] ; unidades[2] ; ok[3] ; comentario[4]
+                        if (partes.length >= 2) {
+                            const skuFila = partes[1].trim().toUpperCase();
+
+                            if (skuFila === skuBuscado) {
+                                resultadosEncontrados.push({
+                                    tienda: partes[0] || '-',
+                                    unidades: partes[2] || '0',
+                                    comentario: partes[4] || ''
+                                });
+                            }
+                        }
+                    }
+
+                    if (resultadosEncontrados.length > 0) {
+                        mostrarTablaResultados(skuBuscado, resultadosEncontrados);
+                    } else {
+                        mostrarError(`No se ha encontrado el SKU: <strong>${skuBuscado}</strong>`);
+                    }
+                })
+                .catch(error => {
+                    mostrarError(`<strong>Error de conexión.</strong> No se pudo leer "descuadres_html.txt". Revisa que esté en la misma carpeta.`);
+                });
+        }
+
+        function mostrarTablaResultados(sku, datos) {
+            const divResultado = document.getElementById('resultado');
+            divResultado.style.display = 'block';
+            divResultado.style.border = '1px solid #e2e8f0';
+
+            let totalUnidades = 0;
+            
+            let html = `
+                <div class="mensaje-info">
+                    <strong>SKU Encontrado:</strong> ${sku}
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tienda (TSA)</th>
+                            <th>Uds</th>
+                            <th>Comentarios</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            datos.forEach(dato => {
+                totalUnidades += parseInt(dato.unidades) || 0;
+                html += `
+                    <tr>
+                        <td><strong>${dato.tienda}</strong></td>
+                        <td>${dato.unidades}</td>
+                        <td style="font-size: 0.85rem; color: #64748b;">${dato.comentario}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                    <tfoot style="background-color: #f8fafc; font-weight: bold;">
+                        <tr>
+                            <td style="text-align: right;">TOTAL:</td>
+                            <td>${totalUnidades}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            `;
+
+            divResultado.innerHTML = html;
+        }
+
+        function mostrarError(mensaje) {
+            const divResultado = document.getElementById('resultado');
+            divResultado.style.display = 'block';
+            divResultado.style.border = 'none';
+            divResultado.innerHTML = `<div class="mensaje-error">${mensaje}</div>`;
         }
     </script>
 </body>
