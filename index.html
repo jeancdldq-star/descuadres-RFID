@@ -22,6 +22,31 @@
             margin: 0;
             display: flex;
             justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding-top: 60px; /* Espacio para el botón de recargar */
+        }
+
+        /* Botón de recargar arriba a la derecha */
+        .btn-recargar-top {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background-color: #475569;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: background-color 0.2s;
+            z-index: 10;
+        }
+
+        .btn-recargar-top:hover {
+            background-color: #334155;
         }
 
         .container {
@@ -84,7 +109,6 @@
             border: 1px solid var(--border);
         }
 
-        /* Estilos de la tabla de resultados */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -125,7 +149,69 @@
             text-align: center;
         }
 
-        /* Para que se vea bien en móviles pequeños */
+        /* Modal Personalizado de Confirmación */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            color: #b45309;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn-cancelar {
+            background-color: #e2e8f0;
+            color: #334155;
+        }
+        .btn-cancelar:hover { background-color: #cbd5e1; }
+        
+        .btn-confirmar {
+            background-color: #ef4444;
+            color: white;
+        }
+        .btn-confirmar:hover { background-color: #dc2626; }
+
+        /* Notificación Flotante (Toast) */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 100;
+        }
+
         @media (max-width: 480px) {
             .input-group {
                 flex-direction: column;
@@ -137,10 +223,16 @@
                 padding: 10px;
                 font-size: 0.9rem;
             }
+            .btn-recargar-top {
+                font-size: 0.8rem;
+                padding: 8px 12px;
+            }
         }
     </style>
 </head>
 <body>
+
+    <button class="btn-recargar-top" onclick="abrirModalRecarga()">🔄 Recargar nuevos descuadres</button>
 
     <div class="container">
         <h2>Buscador de Descuadres</h2>
@@ -153,26 +245,52 @@
 
         <div id="resultado"></div>
         
-        <!-- Nuevo botón para descargar el archivo modificado -->
+        <!-- Zona de descarga de archivo modificado -->
         <div id="zonaDescarga" style="display: none; margin-top: 20px; text-align: center; border-top: 2px dashed #cbd5e1; padding-top: 20px;">
             <p style="color: #b45309; font-size: 0.9rem; margin-bottom: 10px; font-weight: bold;">⚠️ Tienes cambios sin guardar</p>
             <button onclick="descargarTXT()" style="background-color: #d97706; width: 100%;">📥 Descargar TXT Actualizado</button>
-            <p style="color: #64748b; font-size: 0.8rem; margin-top: 10px;">Sube este archivo a GitHub para guardar los cambios.</p>
+            <p style="color: #64748b; font-size: 0.8rem; margin-top: 10px;">Sube este archivo a GitHub para guardar los cambios en la nube.</p>
         </div>
     </div>
+
+    <!-- Modal de confirmación para recargar -->
+    <div id="modalConfirmacion" class="modal-overlay">
+        <div class="modal-content">
+            <h3>⚠️ Advertencia</h3>
+            <p>Se van a borrar todos los OKs que no hayas descargado y se consultarán los datos originales de nuevo.</p>
+            <p><strong>¿Estás seguro?</strong></p>
+            <div class="modal-buttons">
+                <button onclick="cerrarModalRecarga()" class="btn-cancelar">Cancelar</button>
+                <button onclick="confirmarRecarga()" class="btn-confirmar">Sí, recargar todo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificación emergente -->
+    <div id="toastNotificacion" class="toast">Datos recargados correctamente</div>
 
     <script>
         // Variables globales para mantener el archivo en memoria
         let lineasTXT = [];
         let cambiosPendientes = false;
 
-        // Cargamos el archivo nada más abrir la página, en lugar de en cada búsqueda
         window.onload = function() {
             document.getElementById('skuInput').focus();
-            cargarArchivoTXT();
+            cargarArchivoTXT(false); // Falso = Intenta cargar de caché si existe
         };
 
-        function cargarArchivoTXT() {
+        function cargarArchivoTXT(forzarDescargaOriginal) {
+            // Si no estamos forzando la descarga original, miramos si hay datos guardados en caché local
+            if (!forzarDescargaOriginal) {
+                const datosGuardados = localStorage.getItem('descuadresTXTData');
+                if (datosGuardados) {
+                    lineasTXT = JSON.parse(datosGuardados);
+                    verificarSiHayCambiosPendientes();
+                    return; // Si encontró datos en caché, ya no baja nada del servidor
+                }
+            }
+
+            // Si forzamos o no había caché, bajamos del servidor
             const url = 'descuadres_html.txt?v=' + new Date().getTime();
             fetch(url)
                 .then(respuesta => {
@@ -182,11 +300,43 @@
                 .then(texto => {
                     // Guardamos todas las líneas en memoria
                     lineasTXT = texto.split('\n');
+                    // Guardamos la versión fresca en el LocalStorage
+                    localStorage.setItem('descuadresTXTData', JSON.stringify(lineasTXT));
+                    verificarSiHayCambiosPendientes();
+
+                    if (forzarDescargaOriginal) {
+                        mostrarToast("✅ Datos actualizados del servidor");
+                    }
                 })
                 .catch(error => {
                     mostrarError(`<strong>Error:</strong> No se pudo cargar "descuadres_html.txt".`);
                 });
         }
+
+        // --- FUNCIONES DEL MODAL DE RECARGA ---
+        function abrirModalRecarga() {
+            document.getElementById('modalConfirmacion').style.display = 'flex';
+        }
+
+        function cerrarModalRecarga() {
+            document.getElementById('modalConfirmacion').style.display = 'none';
+        }
+
+        function confirmarRecarga() {
+            cerrarModalRecarga();
+            // Borramos la caché del navegador
+            localStorage.removeItem('descuadresTXTData');
+            
+            // Limpiamos pantalla
+            document.getElementById('resultado').style.display = 'none';
+            document.getElementById('zonaDescarga').style.display = 'none';
+            document.getElementById('skuInput').value = '';
+            cambiosPendientes = false;
+
+            // Volvemos a solicitar el archivo desde cero
+            cargarArchivoTXT(true);
+        }
+        // ----------------------------------------
 
         function buscarSKU() {
             const inputElement = document.getElementById('skuInput');
@@ -194,7 +344,6 @@
             const skuBuscadoLimpio = skuOriginal.replace(/\//g, ''); 
             const divResultado = document.getElementById('resultado');
 
-            // Limpiamos el input para el siguiente escaneo
             inputElement.value = '';
             inputElement.focus();
 
@@ -210,7 +359,6 @@
 
             let resultadosEncontrados = [];
 
-            // Empezamos en 1 para saltarnos la cabecera
             for (let i = 1; i < lineasTXT.length; i++) {
                 const linea = lineasTXT[i].trim();
                 if (!linea) continue;
@@ -223,10 +371,10 @@
 
                     if (skuFilaLimpio === skuBuscadoLimpio) {
                         resultadosEncontrados.push({
-                            indiceOriginal: i, // Guardamos en qué línea exacta del TXT está
+                            indiceOriginal: i, 
                             tienda: partes[0] || '-',
                             unidades: partes[2] || '0',
-                            ok: partes[3] || '0', // Columna OK
+                            ok: partes[3] || '0', 
                             comentario: partes[4] || '',
                             skuBonito: skuFilaOriginal
                         });
@@ -267,12 +415,10 @@
             datos.forEach(dato => {
                 totalUnidades += parseInt(dato.unidades) || 0;
                 
-                // Lógica del botón OK
                 let botonAccion = '';
                 if (dato.ok === '3') {
                     botonAccion = '<span style="color: #16a34a; font-weight: bold;">✓ Listo</span>';
                 } else {
-                    // Si no es 3, mostramos el botón. Le pasamos la línea exacta que debe editar
                     botonAccion = `<button onclick="marcarComoOK(${dato.indiceOriginal}, '${sku}')" style="padding: 6px 12px; font-size: 14px; background-color: #10b981; width: auto;">OK</button>`;
                 }
 
@@ -302,52 +448,56 @@
             divResultado.innerHTML = html;
         }
 
-        // Función que se ejecuta al pulsar el botón OK
         function marcarComoOK(indice, skuBuscado) {
-            // 1. Buscamos la línea exacta y la separamos
             let partes = lineasTXT[indice].split(';');
-            
-            // Nos aseguramos de que tenga 5 columnas por si el txt vino cortado
             while(partes.length < 5) partes.push(""); 
-            
-            // 2. Cambiamos el valor de la columna OK (índice 3) a "3"
             partes[3] = "3"; 
-            
-            // 3. Volvemos a juntar la línea con los puntos y comas y la guardamos en memoria
             lineasTXT[indice] = partes.join(';'); 
             
-            // 4. Mostramos el botón de descargar porque hay cambios nuevos
-            document.getElementById('zonaDescarga').style.display = 'block';
-            cambiosPendientes = true;
+            // ¡NUEVO!: Actualizamos el LocalStorage cada vez que se pulsa OK
+            localStorage.setItem('descuadresTXTData', JSON.stringify(lineasTXT));
+            
+            verificarSiHayCambiosPendientes();
 
-            // 5. Volvemos a lanzar la búsqueda para que la tabla se actualice visualmente (cambie OK por "✓ Listo")
             document.getElementById('skuInput').value = skuBuscado;
             buscarSKU();
         }
 
-        // Función para descargar el archivo actualizado
+        // Revisa si hay algún "3" en el array para mostrar o esconder el botón de descarga
+        function verificarSiHayCambiosPendientes() {
+            let hayCambios = false;
+            for (let i = 1; i < lineasTXT.length; i++) {
+                const linea = lineasTXT[i].trim();
+                if (!linea) continue;
+                const partes = linea.split(';');
+                if (partes.length >= 4 && partes[3] === '3') {
+                    hayCambios = true;
+                    break;
+                }
+            }
+
+            if (hayCambios) {
+                document.getElementById('zonaDescarga').style.display = 'block';
+                cambiosPendientes = true;
+            } else {
+                document.getElementById('zonaDescarga').style.display = 'none';
+                cambiosPendientes = false;
+            }
+        }
+
         function descargarTXT() {
-            // Juntamos todas las líneas de nuevo con saltos de línea
             const contenido = lineasTXT.join('\n');
-            
-            // Creamos un archivo virtual en el navegador
             const blob = new Blob([contenido], { type: 'text/plain' });
             const url = window.URL.createObjectURL(blob);
             
-            // Forzamos la descarga del archivo
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'descuadres_html.txt'; // Mismo nombre para sobreescribir fácilmente
+            a.download = 'descuadres_html.txt'; 
             document.body.appendChild(a);
             a.click();
             
-            // Limpiamos
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
-            
-            // Ocultamos el aviso de descarga
-            document.getElementById('zonaDescarga').style.display = 'none';
-            cambiosPendientes = false;
         }
 
         function mostrarError(mensaje) {
@@ -355,6 +505,15 @@
             divResultado.style.display = 'block';
             divResultado.style.border = 'none';
             divResultado.innerHTML = `<div class="mensaje-error">${mensaje}</div>`;
+        }
+
+        function mostrarToast(mensaje) {
+            const toast = document.getElementById('toastNotificacion');
+            toast.innerText = mensaje;
+            toast.style.opacity = '1';
+            setTimeout(() => {
+                toast.style.opacity = '0';
+            }, 3000);
         }
     </script>
 </body>
