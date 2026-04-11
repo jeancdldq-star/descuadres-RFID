@@ -156,7 +156,7 @@
             text-align: center;
         }
 
-        /* Modal Personalizado de Confirmación */
+        /* Modal Personalizado */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -219,7 +219,7 @@
             z-index: 100;
         }
 
-        /* Estilos de los botones OK y Listo */
+        /* Estilos de los botones OK, Listo y Comentario */
         .btn-ok {
             padding: 6px 12px;
             font-size: 14px;
@@ -259,6 +259,22 @@
         }
         .btn-listo:hover .texto-btn::before {
             font-size: 14px; /* Muestra el nuevo texto */
+        }
+
+        .btn-comentario {
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            transition: background-color 0.2s;
+            font-weight: 600;
+        }
+        .btn-comentario:hover {
+            background-color: #e2e8f0;
         }
 
         /* Estilos para la vista agrupada por tiendas */
@@ -332,7 +348,7 @@
             }
             th, td {
                 padding: 10px;
-                font-size: 0.9rem;
+                font-size: 0.85rem;
             }
             .header-group {
                 flex-direction: column;
@@ -396,6 +412,15 @@
         </div>
     </div>
 
+    <!-- Modal de lectura de Comentario -->
+    <div id="modalComentario" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px; text-align: center;">💬 Nota</h3>
+            <p id="textoComentario" style="color: #334155; text-align: left; font-size: 0.95rem; line-height: 1.5; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;"></p>
+            <button onclick="cerrarModalComentario()" class="btn-secundario" style="width: 100%;">Cerrar</button>
+        </div>
+    </div>
+
     <!-- Notificación emergente -->
     <div id="toastNotificacion" class="toast">Datos recargados correctamente</div>
 
@@ -445,13 +470,23 @@
                 });
         }
 
-        // --- FUNCIONES DEL MODAL DE RECARGA ---
+        // --- FUNCIONES DE LOS MODALES ---
         function abrirModalRecarga() {
             document.getElementById('modalConfirmacion').style.display = 'flex';
         }
 
         function cerrarModalRecarga() {
             document.getElementById('modalConfirmacion').style.display = 'none';
+        }
+
+        function abrirModalComentario(textoCodificado) {
+            const texto = decodeURIComponent(textoCodificado);
+            document.getElementById('textoComentario').innerText = texto;
+            document.getElementById('modalComentario').style.display = 'flex';
+        }
+
+        function cerrarModalComentario() {
+            document.getElementById('modalComentario').style.display = 'none';
         }
 
         function confirmarRecarga() {
@@ -545,9 +580,9 @@
                     <thead>
                         <tr>
                             <th>Tienda</th>
-                            <th>Uds</th>
+                            <th style="text-align: center;">Uds</th>
                             <th style="text-align: center;">Estado</th>
-                            <th>Comentarios</th>
+                            <th style="text-align: center;">Nota</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -566,12 +601,19 @@
                     botonAccion = `<button onclick="marcarComoOK(${dato.indiceOriginal}, '${sku}')" class="btn-ok">OK</button>`;
                 }
 
+                // Generamos el botón de comentario si hay texto, si no, un guión
+                let comentarioHtml = '-';
+                if (dato.comentario && dato.comentario.trim() !== '') {
+                    const comentarioCodificado = encodeURIComponent(dato.comentario);
+                    comentarioHtml = `<button onclick="abrirModalComentario('${comentarioCodificado}')" class="btn-comentario">💬 Ver</button>`;
+                }
+
                 html += `
                     <tr>
                         <td><strong>${dato.tienda}</strong></td>
-                        <td>${dato.unidades}</td>
+                        <td style="text-align: center;">${dato.unidades}</td>
                         <td style="text-align: center; min-width: 90px;">${botonAccion}</td>
-                        <td style="font-size: 0.85rem; color: #64748b;">${dato.comentario}</td>
+                        <td style="text-align: center;">${comentarioHtml}</td>
                     </tr>
                 `;
             });
@@ -581,7 +623,7 @@
                     <tfoot style="background-color: #f8fafc; font-weight: bold;">
                         <tr>
                             <td style="text-align: right;">TOTAL PENDIENTES:</td>
-                            <td>${totalUnidades}</td>
+                            <td style="text-align: center;">${totalUnidades}</td>
                             <td></td>
                             <td></td>
                         </tr>
