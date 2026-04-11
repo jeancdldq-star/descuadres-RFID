@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Buscador de SKUs en Tiendas</title>
+    
+    <!-- Librerías para generar el PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
     <style>
         :root {
             --primary: #2563eb;
@@ -214,6 +219,48 @@
             z-index: 100;
         }
 
+        /* Estilos de los botones OK y Listo */
+        .btn-ok {
+            padding: 6px 12px;
+            font-size: 14px;
+            background-color: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-ok:hover { background-color: #059669; }
+
+        .btn-listo {
+            padding: 6px 12px;
+            font-size: 14px;
+            background-color: #f8fafc;
+            color: #16a34a;
+            border: 1px solid #16a34a;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        
+        .btn-listo:hover {
+            background-color: #fef2f2;
+            color: #dc2626;
+            border-color: #dc2626;
+        }
+
+        .btn-listo:hover .texto-btn::before {
+            content: "Deshacer";
+        }
+        .btn-listo:hover .texto-btn {
+            font-size: 0; /* Oculta el texto original */
+        }
+        .btn-listo:hover .texto-btn::before {
+            font-size: 14px; /* Muestra el nuevo texto */
+        }
+
         @media (max-width: 480px) {
             .input-group {
                 flex-direction: column;
@@ -256,11 +303,11 @@
 
         <div id="resultado"></div>
         
-        <!-- Zona de descarga de archivo modificado -->
+        <!-- Zona de descarga de archivo modificado (Ahora PDF) -->
         <div id="zonaDescarga" style="display: none; margin-top: 20px; text-align: center; border-top: 2px dashed #cbd5e1; padding-top: 20px;">
-            <p style="color: #b45309; font-size: 0.9rem; margin-bottom: 10px; font-weight: bold;">⚠️ Tienes cambios sin guardar</p>
-            <button onclick="descargarTXT()" style="background-color: #d97706; width: 100%;">📥 Descargar TXT Actualizado</button>
-            <p style="color: #64748b; font-size: 0.8rem; margin-top: 10px;">Sube este archivo a GitHub para guardar los cambios en la nube.</p>
+            <p style="color: #475569; font-size: 0.9rem; margin-bottom: 10px; font-weight: bold;">📄 Reporte de prendas faltantes</p>
+            <button onclick="descargarPDF()" style="background-color: #dc2626; width: 100%;">📥 Descargar Pendientes en PDF</button>
+            <p style="color: #64748b; font-size: 0.8rem; margin-top: 10px;">Genera un documento solo con los SKUs que no están marcados como listos.</p>
         </div>
     </div>
 
@@ -349,14 +396,18 @@
         }
         // ----------------------------------------
 
-        function buscarSKU() {
+        function buscarSKU(evitarFocus = false) {
             const inputElement = document.getElementById('skuInput');
             const skuOriginal = inputElement.value.trim().toUpperCase();
             const skuBuscadoLimpio = skuOriginal.replace(/\//g, ''); 
             const divResultado = document.getElementById('resultado');
 
             inputElement.value = '';
-            inputElement.focus();
+            
+            // Solo enfocamos si no le decimos explícitamente que lo evite
+            if (!evitarFocus) {
+                inputElement.focus();
+            }
 
             if (!skuBuscadoLimpio) {
                 mostrarError('Por favor, escanea o introduce un SKU válido.');
@@ -428,16 +479,16 @@
                 
                 let botonAccion = '';
                 if (dato.ok === '3') {
-                    botonAccion = '<span style="color: #16a34a; font-weight: bold;">✓ Listo</span>';
+                    botonAccion = `<button onclick="deshacerOK(${dato.indiceOriginal}, '${sku}')" class="btn-listo" title="Deshacer"><span class="texto-btn">✓ Listo</span></button>`;
                 } else {
-                    botonAccion = `<button onclick="marcarComoOK(${dato.indiceOriginal}, '${sku}')" style="padding: 6px 12px; font-size: 14px; background-color: #10b981; width: auto;">OK</button>`;
+                    botonAccion = `<button onclick="marcarComoOK(${dato.indiceOriginal}, '${sku}')" class="btn-ok">OK</button>`;
                 }
 
                 html += `
                     <tr>
                         <td><strong>${dato.tienda}</strong></td>
                         <td>${dato.unidades}</td>
-                        <td style="text-align: center;">${botonAccion}</td>
+                        <td style="text-align: center; min-width: 90px;">${botonAccion}</td>
                         <td style="font-size: 0.85rem; color: #64748b;">${dato.comentario}</td>
                     </tr>
                 `;
@@ -461,54 +512,102 @@
 
         function marcarComoOK(indice, skuBuscado) {
             let partes = lineasTXT[indice].split(';');
-            while(partes.length < 5) partes.push(""); 
+            while(partes.length < 6) partes.push(""); // Añadimos una columna extra (índice 5) para guardar el estado original
+            
+            // Si no habíamos guardado el valor original, lo guardamos ahora en la columna 5
+            if (!partes[5]) partes[5] = partes[3]; 
+            
             partes[3] = "3"; 
             lineasTXT[indice] = partes.join(';'); 
             
-            // ¡NUEVO!: Actualizamos el LocalStorage cada vez que se pulsa OK
             localStorage.setItem('descuadresTXTData', JSON.stringify(lineasTXT));
-            
             verificarSiHayCambiosPendientes();
 
             document.getElementById('skuInput').value = skuBuscado;
-            buscarSKU();
+            buscarSKU(true);
         }
 
-        // Revisa si hay algún "3" en el array para mostrar o esconder el botón de descarga
+        // ¡NUEVO!: Función para revertir el "Listo" al estado original
+        function deshacerOK(indice, skuBuscado) {
+            let partes = lineasTXT[indice].split(';');
+            
+            // Si teníamos guardado el estado original (índice 5), lo restauramos. Si no, lo dejamos en '0'.
+            if (partes.length >= 6 && partes[5] !== "") {
+                partes[3] = partes[5]; 
+            } else {
+                partes[3] = "0"; 
+            }
+
+            lineasTXT[indice] = partes.join(';'); 
+            
+            localStorage.setItem('descuadresTXTData', JSON.stringify(lineasTXT));
+            verificarSiHayCambiosPendientes();
+
+            document.getElementById('skuInput').value = skuBuscado;
+            buscarSKU(true);
+        }
+
+        // Actualizado: Muestra el botón PDF siempre que haya datos cargados
         function verificarSiHayCambiosPendientes() {
-            let hayCambios = false;
+            if (lineasTXT.length > 0) {
+                document.getElementById('zonaDescarga').style.display = 'block';
+            } else {
+                document.getElementById('zonaDescarga').style.display = 'none';
+            }
+        }
+
+        // ¡NUEVO!: Función para generar y descargar el PDF
+        function descargarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Título del PDF
+            doc.setFontSize(18);
+            doc.text("Reporte de SKUs Pendientes", 14, 22);
+            
+            // Fecha de generación
+            doc.setFontSize(11);
+            doc.setTextColor(100);
+            const fecha = new Date().toLocaleString();
+            doc.text("Generado el: " + fecha, 14, 30);
+
+            // Preparar los datos para la tabla del PDF
+            const tableData = [];
             for (let i = 1; i < lineasTXT.length; i++) {
                 const linea = lineasTXT[i].trim();
                 if (!linea) continue;
+
                 const partes = linea.split(';');
-                if (partes.length >= 4 && partes[3] === '3') {
-                    hayCambios = true;
-                    break;
+                
+                // Si la columna OK (índice 3) NO es '3', significa que está pendiente
+                if (partes.length >= 4 && partes[3] !== '3') {
+                    tableData.push([
+                        partes[0] || '-', // Tienda
+                        partes[1] || '-', // SKU
+                        partes[2] || '0', // Unidades
+                        partes[4] || ''   // Comentarios
+                    ]);
                 }
             }
 
-            if (hayCambios) {
-                document.getElementById('zonaDescarga').style.display = 'block';
-                cambiosPendientes = true;
-            } else {
-                document.getElementById('zonaDescarga').style.display = 'none';
-                cambiosPendientes = false;
-            }
-        }
+            // Generar la tabla usando autoTable
+            doc.autoTable({
+                startY: 38,
+                head: [['Tienda (TSA)', 'SKU', 'Uds', 'Comentarios']],
+                body: tableData,
+                theme: 'striped',
+                styles: { fontSize: 9, cellPadding: 3 },
+                headStyles: { fillColor: [37, 99, 235], textColor: 255 },
+                columnStyles: {
+                    0: { cellWidth: 35 },
+                    1: { cellWidth: 45 },
+                    2: { cellWidth: 15, halign: 'center' },
+                    3: { cellWidth: 'auto' }
+                }
+            });
 
-        function descargarTXT() {
-            const contenido = lineasTXT.join('\n');
-            const blob = new Blob([contenido], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'descuadres_html.txt'; 
-            document.body.appendChild(a);
-            a.click();
-            
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
+            // Guardar el archivo en el ordenador/móvil
+            doc.save('SKUs_Pendientes.pdf');
         }
 
         function mostrarError(mensaje) {
