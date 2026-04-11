@@ -382,7 +382,7 @@
         <p style="text-align: center; color: #64748b; margin-bottom: 24px;">Escanea o introduce el SKU para ver en qué tiendas se encuentra.</p>
         
         <div class="input-group">
-            <input type="text" id="skuInput" placeholder="Ej: 0010100150042 (sin barras)" onkeypress="if(event.key === 'Enter') buscarSKU()">
+            <input type="text" id="skuInput" placeholder="Ej: 0010100150042 " onkeypress="if(event.key === 'Enter') buscarSKU()">
             <button onclick="buscarSKU()">Buscar</button>
             <button onclick="verTodas()" class="btn-secundario" title="Mostrar todas las tiendas">Ver Todas</button>
         </div>
@@ -393,7 +393,7 @@
                 <p style="color: #991b1b; font-size: 1rem; font-weight: bold; margin-bottom: 4px;">📄 Reporte de prendas</p>
                 <p style="color: #b91c1c; font-size: 0.85rem;">Descarga el PDF con los SKUs pendientes.</p>
             </div>
-            <button onclick="descargarPDF()" class="btn-descarga-pdf">📥 Descargar Pendientes</button>
+            <button onclick="descargarPDF()" class="btn-descarga-pdf">Descargar SKUs Pendientes</button>
         </div>
 
         <div id="resultado"></div>
@@ -403,7 +403,7 @@
     <div id="modalConfirmacion" class="modal-overlay">
         <div class="modal-content">
             <h3>⚠️ Advertencia</h3>
-            <p>Se van a borrar todos los OKs que no hayas descargado y se consultarán los datos originales de nuevo.</p>
+            <p>Se van a borrar todos los OKs que no hayas descargado y se consultarán los datos de los nuevos descuadres.</p>
             <p><strong>¿Estás seguro?</strong></p>
             <div class="modal-buttons">
                 <button onclick="cerrarModalRecarga()" class="btn-cancelar">Cancelar</button>
@@ -415,7 +415,7 @@
     <!-- Modal de lectura de Comentario -->
     <div id="modalComentario" class="modal-overlay">
         <div class="modal-content">
-            <h3 style="margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px; text-align: center;">💬 Nota</h3>
+            <h3 style="margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px; text-align: center;">Comentario</h3>
             <p id="textoComentario" style="color: #334155; text-align: left; font-size: 0.95rem; line-height: 1.5; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;"></p>
             <button onclick="cerrarModalComentario()" class="btn-secundario" style="width: 100%;">Cerrar</button>
         </div>
@@ -605,7 +605,7 @@
                 let comentarioHtml = '-';
                 if (dato.comentario && dato.comentario.trim() !== '') {
                     const comentarioCodificado = encodeURIComponent(dato.comentario);
-                    comentarioHtml = `<button onclick="abrirModalComentario('${comentarioCodificado}')" class="btn-comentario">💬 Ver</button>`;
+                    comentarioHtml = `<button onclick="abrirModalComentario('${comentarioCodificado}')" class="btn-comentario">Ver Comentario</button>`;
                 }
 
                 html += `
@@ -705,7 +705,7 @@
                 html += `
                     <div class="tienda-grupo">
                         <div class="tienda-header">
-                            <span>📍 Tienda: ${tienda}</span>
+                            <span>Tienda: ${tienda}</span>
                             <span style="font-size: 0.9rem; font-weight: normal; background: white; padding: 2px 8px; border-radius: 12px;">${udsTienda} uds pendientes</span>
                         </div>
                         <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
