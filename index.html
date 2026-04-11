@@ -261,6 +261,37 @@
             font-size: 14px; /* Muestra el nuevo texto */
         }
 
+        /* Estilos para la vista agrupada por tiendas */
+        .tienda-grupo {
+            margin-top: 20px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .tienda-header {
+            background: #e2e8f0;
+            padding: 12px 16px;
+            font-weight: 600;
+            color: #0f172a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-secundario {
+            background-color: #94a3b8;
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .btn-secundario:hover { background-color: #64748b; }
+
         @media (max-width: 480px) {
             .input-group {
                 flex-direction: column;
@@ -299,6 +330,7 @@
         <div class="input-group">
             <input type="text" id="skuInput" placeholder="Ej: 0010100150042 (sin barras)" onkeypress="if(event.key === 'Enter') buscarSKU()">
             <button onclick="buscarSKU()">Buscar</button>
+            <button onclick="verTodas()" class="btn-secundario" title="Mostrar todas las tiendas">Ver Todas</button>
         </div>
 
         <div id="resultado"></div>
@@ -344,6 +376,7 @@
                 if (datosGuardados) {
                     lineasTXT = JSON.parse(datosGuardados);
                     verificarSiHayCambiosPendientes();
+                    mostrarVistaGeneral(); // Mostrar agrupados al cargar la caché
                     return; // Si encontró datos en caché, ya no baja nada del servidor
                 }
             }
@@ -361,6 +394,7 @@
                     // Guardamos la versión fresca en el LocalStorage
                     localStorage.setItem('descuadresTXTData', JSON.stringify(lineasTXT));
                     verificarSiHayCambiosPendientes();
+                    mostrarVistaGeneral(); // Mostrar agrupados al descargar del servidor
 
                     if (forzarDescargaOriginal) {
                         mostrarToast("✅ Datos actualizados del servidor");
@@ -396,6 +430,11 @@
         }
         // ----------------------------------------
 
+        function verTodas() {
+            document.getElementById('skuInput').value = '';
+            mostrarVistaGeneral();
+        }
+
         function buscarSKU(evitarFocus = false) {
             const inputElement = document.getElementById('skuInput');
             const skuOriginal = inputElement.value.trim().toUpperCase();
@@ -410,7 +449,7 @@
             }
 
             if (!skuBuscadoLimpio) {
-                mostrarError('Por favor, escanea o introduce un SKU válido.');
+                mostrarVistaGeneral(); // Si busca en blanco, mostramos todo
                 return;
             }
 
@@ -510,6 +549,98 @@
             divResultado.innerHTML = html;
         }
 
+        function mostrarVistaGeneral() {
+            const divResultado = document.getElementById('resultado');
+            divResultado.style.display = 'block';
+            divResultado.style.border = 'none';
+
+            if (lineasTXT.length <= 1) {
+                divResultado.innerHTML = '<div class="mensaje-info">No hay datos disponibles en el archivo.</div>';
+                return;
+            }
+
+            // Agrupar datos por tienda
+            const tiendas = {};
+            let totalGeneral = 0;
+
+            for (let i = 1; i < lineasTXT.length; i++) {
+                const linea = lineasTXT[i].trim();
+                if (!linea) continue;
+
+                const partes = linea.split(';');
+                if (partes.length >= 2) {
+                    const tienda = partes[0] || 'Sin Tienda';
+                    if (!tiendas[tienda]) tiendas[tienda] = [];
+                    tiendas[tienda].push({
+                        indiceOriginal: i,
+                        sku: partes[1] || '-',
+                        unidades: partes[2] || '0',
+                        ok: partes[3] || '0',
+                        comentario: partes[4] || ''
+                    });
+                }
+            }
+
+            let html = '<h3 style="margin-top:0; color:#334155; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; font-size: 1.2rem;">Vista General por Tiendas</h3>';
+
+            // Ordenar tiendas alfabéticamente
+            const tiendasOrdenadas = Object.keys(tiendas).sort();
+
+            for (const tienda of tiendasOrdenadas) {
+                const items = tiendas[tienda];
+                let udsTienda = 0;
+                let itemsHtml = '';
+
+                items.forEach(item => {
+                    udsTienda += parseInt(item.unidades) || 0;
+                    totalGeneral += parseInt(item.unidades) || 0;
+
+                    let botonAccion = '';
+                    if (item.ok === '3') {
+                        botonAccion = `<button onclick="deshacerOK(${item.indiceOriginal}, '')" class="btn-listo" style="padding: 4px 8px; font-size: 12px;" title="Deshacer"><span class="texto-btn">✓ Listo</span></button>`;
+                    } else {
+                        botonAccion = `<button onclick="marcarComoOK(${item.indiceOriginal}, '')" class="btn-ok" style="padding: 4px 8px; font-size: 12px;">OK</button>`;
+                    }
+
+                    itemsHtml += `
+                        <tr>
+                            <td style="padding: 8px 15px; border-bottom: 1px solid #e2e8f0;">
+                                <strong>${item.sku}</strong>
+                                ${item.comentario ? `<br><span style="font-size:0.75rem; color:#64748b;">${item.comentario}</span>` : ''}
+                            </td>
+                            <td style="padding: 8px 15px; border-bottom: 1px solid #e2e8f0; text-align: center;">${item.unidades}</td>
+                            <td style="padding: 8px 15px; border-bottom: 1px solid #e2e8f0; text-align: center; min-width: 90px;">${botonAccion}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                    <div class="tienda-grupo">
+                        <div class="tienda-header">
+                            <span>📍 Tienda: ${tienda}</span>
+                            <span style="font-size: 0.9rem; font-weight: normal; background: white; padding: 2px 8px; border-radius: 12px;">${udsTienda} uds</span>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                            <thead>
+                                <tr>
+                                    <th style="padding: 8px 15px; border-bottom: 1px solid #cbd5e1; background: #f1f5f9; text-align: left;">SKU</th>
+                                    <th style="padding: 8px 15px; border-bottom: 1px solid #cbd5e1; background: #f1f5f9; text-align: center;">Uds</th>
+                                    <th style="padding: 8px 15px; border-bottom: 1px solid #cbd5e1; background: #f1f5f9; text-align: center;">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${itemsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            html += `<div style="margin-top: 20px; text-align: right; font-weight: bold; font-size: 1.1rem; color: #0f172a;">Total Unidades: ${totalGeneral}</div>`;
+            
+            divResultado.innerHTML = html;
+        }
+
         function marcarComoOK(indice, skuBuscado) {
             let partes = lineasTXT[indice].split(';');
             while(partes.length < 6) partes.push(""); // Añadimos una columna extra (índice 5) para guardar el estado original
@@ -523,8 +654,13 @@
             localStorage.setItem('descuadresTXTData', JSON.stringify(lineasTXT));
             verificarSiHayCambiosPendientes();
 
-            document.getElementById('skuInput').value = skuBuscado;
-            buscarSKU(true);
+            // Si hay un skuBuscado, volvemos a la vista de búsqueda, si no, a la vista general
+            if (skuBuscado) {
+                document.getElementById('skuInput').value = skuBuscado;
+                buscarSKU(true);
+            } else {
+                mostrarVistaGeneral();
+            }
         }
 
         // ¡NUEVO!: Función para revertir el "Listo" al estado original
@@ -543,8 +679,13 @@
             localStorage.setItem('descuadresTXTData', JSON.stringify(lineasTXT));
             verificarSiHayCambiosPendientes();
 
-            document.getElementById('skuInput').value = skuBuscado;
-            buscarSKU(true);
+            // Si hay un skuBuscado, volvemos a la vista de búsqueda, si no, a la vista general
+            if (skuBuscado) {
+                document.getElementById('skuInput').value = skuBuscado;
+                buscarSKU(true);
+            } else {
+                mostrarVistaGeneral();
+            }
         }
 
         // Actualizado: Muestra el botón PDF siempre que haya datos cargados
