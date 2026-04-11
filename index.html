@@ -292,6 +292,37 @@
         }
         .btn-secundario:hover { background-color: #64748b; }
 
+        /* Nuevos estilos para la zona de descarga (banner superior) */
+        .zona-descarga {
+            display: none;
+            background-color: #fff1f2;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #fecaca;
+            margin-bottom: 20px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.1);
+        }
+        .zona-descarga-texto p {
+            margin: 0;
+        }
+        .btn-descarga-pdf {
+            background-color: #dc2626;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            white-space: nowrap;
+            transition: background-color 0.2s;
+        }
+        .btn-descarga-pdf:hover {
+            background-color: #b91c1c;
+        }
+
         @media (max-width: 480px) {
             .input-group {
                 flex-direction: column;
@@ -315,6 +346,13 @@
                 padding: 8px 12px;
                 width: 100%;
             }
+            .zona-descarga {
+                flex-direction: column;
+                text-align: center;
+            }
+            .btn-descarga-pdf {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -333,14 +371,16 @@
             <button onclick="verTodas()" class="btn-secundario" title="Mostrar todas las tiendas">Ver Todas</button>
         </div>
 
-        <div id="resultado"></div>
-        
-        <!-- Zona de descarga de archivo modificado (Ahora PDF) -->
-        <div id="zonaDescarga" style="display: none; margin-top: 20px; text-align: center; border-top: 2px dashed #cbd5e1; padding-top: 20px;">
-            <p style="color: #475569; font-size: 0.9rem; margin-bottom: 10px; font-weight: bold;">📄 Reporte de prendas faltantes</p>
-            <button onclick="descargarPDF()" style="background-color: #dc2626; width: 100%;">📥 Descargar Pendientes en PDF</button>
-            <p style="color: #64748b; font-size: 0.8rem; margin-top: 10px;">Genera un documento solo con los SKUs que no están marcados como listos.</p>
+        <!-- Zona de descarga reubicada (ahora arriba, compacta) -->
+        <div id="zonaDescarga" class="zona-descarga">
+            <div class="zona-descarga-texto">
+                <p style="color: #991b1b; font-size: 1rem; font-weight: bold; margin-bottom: 4px;">📄 Reporte de prendas</p>
+                <p style="color: #b91c1c; font-size: 0.85rem;">Descarga el PDF con los SKUs pendientes.</p>
+            </div>
+            <button onclick="descargarPDF()" class="btn-descarga-pdf">📥 Descargar Pendientes</button>
         </div>
+
+        <div id="resultado"></div>
     </div>
 
     <!-- Modal de confirmación para recargar -->
@@ -514,7 +554,10 @@
             `;
 
             datos.forEach(dato => {
-                totalUnidades += parseInt(dato.unidades) || 0;
+                // Solo sumamos a los pendientes si NO está marcado como "Listo" ('3')
+                if (dato.ok !== '3') {
+                    totalUnidades += parseInt(dato.unidades) || 0;
+                }
                 
                 let botonAccion = '';
                 if (dato.ok === '3') {
@@ -537,7 +580,7 @@
                     </tbody>
                     <tfoot style="background-color: #f8fafc; font-weight: bold;">
                         <tr>
-                            <td style="text-align: right;">TOTAL:</td>
+                            <td style="text-align: right;">TOTAL PENDIENTES:</td>
                             <td>${totalUnidades}</td>
                             <td></td>
                             <td></td>
@@ -592,8 +635,11 @@
                 let itemsHtml = '';
 
                 items.forEach(item => {
-                    udsTienda += parseInt(item.unidades) || 0;
-                    totalGeneral += parseInt(item.unidades) || 0;
+                    // Solo sumamos unidades si el artículo NO está completado ('3')
+                    if (item.ok !== '3') {
+                        udsTienda += parseInt(item.unidades) || 0;
+                        totalGeneral += parseInt(item.unidades) || 0;
+                    }
 
                     let botonAccion = '';
                     if (item.ok === '3') {
@@ -618,7 +664,7 @@
                     <div class="tienda-grupo">
                         <div class="tienda-header">
                             <span>📍 Tienda: ${tienda}</span>
-                            <span style="font-size: 0.9rem; font-weight: normal; background: white; padding: 2px 8px; border-radius: 12px;">${udsTienda} uds</span>
+                            <span style="font-size: 0.9rem; font-weight: normal; background: white; padding: 2px 8px; border-radius: 12px;">${udsTienda} uds pendientes</span>
                         </div>
                         <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
                             <thead>
@@ -636,7 +682,7 @@
                 `;
             }
 
-            html += `<div style="margin-top: 20px; text-align: right; font-weight: bold; font-size: 1.1rem; color: #0f172a;">Total Unidades: ${totalGeneral}</div>`;
+            html += `<div style="margin-top: 20px; text-align: right; font-weight: bold; font-size: 1.1rem; color: #0f172a;">Total Unidades Pendientes: ${totalGeneral}</div>`;
             
             divResultado.innerHTML = html;
         }
@@ -691,7 +737,8 @@
         // Actualizado: Muestra el botón PDF siempre que haya datos cargados
         function verificarSiHayCambiosPendientes() {
             if (lineasTXT.length > 0) {
-                document.getElementById('zonaDescarga').style.display = 'block';
+                // Ahora usamos 'flex' para que funcione el diseño horizontal
+                document.getElementById('zonaDescarga').style.display = 'flex';
             } else {
                 document.getElementById('zonaDescarga').style.display = 'none';
             }
