@@ -10,20 +10,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     
     <style>
-        :root {
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --border: #e2e8f0;
-        }
-        
+        /* CSS Clásico sin variables para máxima compatibilidad con PDAs antiguas */
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: Arial, sans-serif;
             padding: 20px; 
-            background-color: var(--bg);
-            color: var(--text-main);
+            background-color: #f8fafc;
+            color: #1e293b;
             margin: 0;
             display: flex;
             justify-content: center;
@@ -64,7 +56,7 @@
         }
 
         .container {
-            background-color: var(--card-bg);
+            background-color: #ffffff;
             padding: 24px;
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -83,19 +75,19 @@
             padding: 12px 16px; 
             font-size: 16px; 
             border-radius: 8px;
-            border: 1px solid var(--border); 
+            border: 1px solid #e2e8f0; 
             outline: none;
             transition: border-color 0.2s;
         }
 
         input:focus {
-            border-color: var(--primary);
+            border-color: #2563eb;
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         button { 
             padding: 12px 24px; 
-            background-color: var(--primary); 
+            background-color: #2563eb; 
             color: white; 
             border: none; 
             border-radius: 8px;
@@ -106,14 +98,14 @@
         }
 
         button:hover { 
-            background-color: var(--primary-hover); 
+            background-color: #1d4ed8; 
         }
 
         #resultado { 
             display: none; 
             border-radius: 8px;
             overflow: hidden;
-            border: 1px solid var(--border);
+            border: 1px solid #e2e8f0;
         }
 
         table {
@@ -124,7 +116,7 @@
 
         th, td {
             padding: 12px 16px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid #e2e8f0;
         }
 
         th {
@@ -152,7 +144,7 @@
             padding: 16px;
             background-color: #f0fdf4;
             color: #166534;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid #e2e8f0;
             text-align: center;
         }
 
@@ -255,10 +247,10 @@
             content: "Deshacer";
         }
         .btn-listo:hover .texto-btn {
-            font-size: 0; /* Oculta el texto original */
+            font-size: 0;
         }
         .btn-listo:hover .texto-btn::before {
-            font-size: 14px; /* Muestra el nuevo texto */
+            font-size: 14px;
         }
 
         .btn-comentario {
@@ -281,7 +273,7 @@
         .tienda-grupo {
             margin-top: 20px;
             background: #f8fafc;
-            border: 1px solid var(--border);
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
             overflow: hidden;
         }
@@ -382,7 +374,7 @@
         <p style="text-align: center; color: #64748b; margin-bottom: 24px;">Escanea o introduce el SKU para ver en qué tiendas se encuentra.</p>
         
         <div class="input-group">
-            <input type="text" id="skuInput" placeholder="Ej: 0010100150042 " onkeypress="if(event.key === 'Enter') buscarSKU()">
+            <input type="text" id="skuInput" placeholder="Ej: 0010100150042 (sin barras)" onkeypress="if(event.key === 'Enter') buscarSKU()">
             <button onclick="buscarSKU()">Buscar</button>
             <button onclick="verTodas()" class="btn-secundario" title="Mostrar todas las tiendas">Ver Todas</button>
         </div>
@@ -393,7 +385,7 @@
                 <p style="color: #991b1b; font-size: 1rem; font-weight: bold; margin-bottom: 4px;">📄 Reporte de prendas</p>
                 <p style="color: #b91c1c; font-size: 0.85rem;">Descarga el PDF con los SKUs pendientes.</p>
             </div>
-            <button onclick="descargarPDF()" class="btn-descarga-pdf">Descargar SKUs Pendientes</button>
+            <button onclick="descargarPDF()" class="btn-descarga-pdf">📥 Descargar Pendientes</button>
         </div>
 
         <div id="resultado"></div>
@@ -403,7 +395,7 @@
     <div id="modalConfirmacion" class="modal-overlay">
         <div class="modal-content">
             <h3>⚠️ Advertencia</h3>
-            <p>Se van a borrar todos los OKs que no hayas descargado y se consultarán los datos de los nuevos descuadres.</p>
+            <p>Se van a borrar todos los OKs que no hayas descargado y se consultarán los datos originales de nuevo.</p>
             <p><strong>¿Estás seguro?</strong></p>
             <div class="modal-buttons">
                 <button onclick="cerrarModalRecarga()" class="btn-cancelar">Cancelar</button>
@@ -415,7 +407,7 @@
     <!-- Modal de lectura de Comentario -->
     <div id="modalComentario" class="modal-overlay">
         <div class="modal-content">
-            <h3 style="margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px; text-align: center;">Comentario</h3>
+            <h3 style="margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px; text-align: center;">💬 Nota</h3>
             <p id="textoComentario" style="color: #334155; text-align: left; font-size: 0.95rem; line-height: 1.5; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;"></p>
             <button onclick="cerrarModalComentario()" class="btn-secundario" style="width: 100%;">Cerrar</button>
         </div>
@@ -425,49 +417,64 @@
     <div id="toastNotificacion" class="toast">Datos recargados correctamente</div>
 
     <script>
-        // Variables globales para mantener el archivo en memoria
-        let lineasTXT = [];
-        let cambiosPendientes = false;
+        // JS Clásico (ES5) - Sin const, let, arrow functions ni backticks
+        var lineasTXT = [];
+        var cambiosPendientes = false;
 
         window.onload = function() {
             document.getElementById('skuInput').focus();
-            cargarArchivoTXT(false); // Falso = Intenta cargar de caché si existe
+            cargarArchivoTXT(false); 
         };
 
+        function intentarGuardarCache() {
+            try {
+                localStorage.setItem('descuadresTXTData', JSON.stringify(lineasTXT));
+            } catch (e) {
+                // Silenciamos el error si la PDA bloquea el localStorage
+            }
+        }
+
         function cargarArchivoTXT(forzarDescargaOriginal) {
-            // Si no estamos forzando la descarga original, miramos si hay datos guardados en caché local
             if (!forzarDescargaOriginal) {
-                const datosGuardados = localStorage.getItem('descuadresTXTData');
-                if (datosGuardados) {
-                    lineasTXT = JSON.parse(datosGuardados);
-                    verificarSiHayCambiosPendientes();
-                    mostrarVistaGeneral(); // Mostrar agrupados al cargar la caché
-                    return; // Si encontró datos en caché, ya no baja nada del servidor
-                }
+                try {
+                    var datosGuardados = localStorage.getItem('descuadresTXTData');
+                    if (datosGuardados) {
+                        lineasTXT = JSON.parse(datosGuardados);
+                        verificarSiHayCambiosPendientes();
+                        mostrarVistaGeneral();
+                        return;
+                    }
+                } catch (e) {}
             }
 
-            // Si forzamos o no había caché, bajamos del servidor
-            const url = 'descuadres_html.txt?v=' + new Date().getTime();
-            fetch(url)
-                .then(respuesta => {
-                    if (!respuesta.ok) throw new Error('Archivo no encontrado');
-                    return respuesta.text();
-                })
-                .then(texto => {
-                    // Guardamos todas las líneas en memoria
-                    lineasTXT = texto.split('\n');
-                    // Guardamos la versión fresca en el LocalStorage
-                    localStorage.setItem('descuadresTXTData', JSON.stringify(lineasTXT));
-                    verificarSiHayCambiosPendientes();
-                    mostrarVistaGeneral(); // Mostrar agrupados al descargar del servidor
+            // Usamos XMLHttpRequest en lugar de fetch() para PDAs antiguas
+            var url = 'descuadres_html.txt?v=' + new Date().getTime();
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200 || xhr.status === 0) { 
+                        // El status 0 ayuda si la PDA lo lee como un protocolo de archivo local
+                        lineasTXT = xhr.responseText.split('\n');
+                        intentarGuardarCache();
+                        verificarSiHayCambiosPendientes();
+                        mostrarVistaGeneral();
 
-                    if (forzarDescargaOriginal) {
-                        mostrarToast("✅ Datos actualizados del servidor");
+                        if (forzarDescargaOriginal) {
+                            mostrarToast("✅ Datos actualizados del servidor");
+                        }
+                    } else {
+                        mostrarError("<strong>Error:</strong> No se pudo cargar 'descuadres_html.txt'.");
                     }
-                })
-                .catch(error => {
-                    mostrarError(`<strong>Error:</strong> No se pudo cargar "descuadres_html.txt".`);
-                });
+                }
+            };
+            
+            xhr.onerror = function() {
+                mostrarError("<strong>Error de conexión.</strong> Verifica que la PDA tiene acceso al archivo.");
+            };
+            
+            xhr.send();
         }
 
         // --- FUNCIONES DE LOS MODALES ---
@@ -480,7 +487,7 @@
         }
 
         function abrirModalComentario(textoCodificado) {
-            const texto = decodeURIComponent(textoCodificado);
+            var texto = decodeURIComponent(textoCodificado);
             document.getElementById('textoComentario').innerText = texto;
             document.getElementById('modalComentario').style.display = 'flex';
         }
@@ -491,16 +498,15 @@
 
         function confirmarRecarga() {
             cerrarModalRecarga();
-            // Borramos la caché del navegador
-            localStorage.removeItem('descuadresTXTData');
+            try {
+                localStorage.removeItem('descuadresTXTData');
+            } catch(e) {}
             
-            // Limpiamos pantalla
             document.getElementById('resultado').style.display = 'none';
             document.getElementById('zonaDescarga').style.display = 'none';
             document.getElementById('skuInput').value = '';
             cambiosPendientes = false;
 
-            // Volvemos a solicitar el archivo desde cero
             cargarArchivoTXT(true);
         }
         // ----------------------------------------
@@ -510,21 +516,22 @@
             mostrarVistaGeneral();
         }
 
-        function buscarSKU(evitarFocus = false) {
-            const inputElement = document.getElementById('skuInput');
-            const skuOriginal = inputElement.value.trim().toUpperCase();
-            const skuBuscadoLimpio = skuOriginal.replace(/\//g, ''); 
-            const divResultado = document.getElementById('resultado');
+        function buscarSKU(evitarFocus) {
+            if (evitarFocus === undefined) evitarFocus = false;
+            
+            var inputElement = document.getElementById('skuInput');
+            var skuOriginal = inputElement.value.trim().toUpperCase();
+            var skuBuscadoLimpio = skuOriginal.replace(/\//g, ''); 
+            var divResultado = document.getElementById('resultado');
 
             inputElement.value = '';
             
-            // Solo enfocamos si no le decimos explícitamente que lo evite
             if (!evitarFocus) {
                 inputElement.focus();
             }
 
             if (!skuBuscadoLimpio) {
-                mostrarVistaGeneral(); // Si busca en blanco, mostramos todo
+                mostrarVistaGeneral(); 
                 return;
             }
 
@@ -533,17 +540,17 @@
                 return;
             }
 
-            let resultadosEncontrados = [];
+            var resultadosEncontrados = [];
 
-            for (let i = 1; i < lineasTXT.length; i++) {
-                const linea = lineasTXT[i].trim();
+            for (var i = 1; i < lineasTXT.length; i++) {
+                var linea = lineasTXT[i].trim();
                 if (!linea) continue;
 
-                const partes = linea.split(';');
+                var partes = linea.split(';');
                 
                 if (partes.length >= 2) {
-                    const skuFilaOriginal = partes[1].trim().toUpperCase();
-                    const skuFilaLimpio = skuFilaOriginal.replace(/\//g, '');
+                    var skuFilaOriginal = partes[1].trim().toUpperCase();
+                    var skuFilaLimpio = skuFilaOriginal.replace(/\//g, '');
 
                     if (skuFilaLimpio === skuBuscadoLimpio) {
                         resultadosEncontrados.push({
@@ -561,81 +568,56 @@
             if (resultadosEncontrados.length > 0) {
                 mostrarTablaResultados(resultadosEncontrados[0].skuBonito, resultadosEncontrados);
             } else {
-                mostrarError(`No se ha encontrado el SKU: <strong>${skuOriginal}</strong>`);
+                mostrarError('No se ha encontrado el SKU: <strong>' + skuOriginal + '</strong>');
             }
         }
 
         function mostrarTablaResultados(sku, datos) {
-            const divResultado = document.getElementById('resultado');
+            var divResultado = document.getElementById('resultado');
             divResultado.style.display = 'block';
             divResultado.style.border = '1px solid #e2e8f0';
 
-            let totalUnidades = 0;
+            var totalUnidades = 0;
             
-            let html = `
-                <div class="mensaje-info">
-                    <strong>SKU Encontrado:</strong> ${sku}
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Tienda</th>
-                            <th style="text-align: center;">Uds</th>
-                            <th style="text-align: center;">Estado</th>
-                            <th style="text-align: center;">Nota</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
+            var html = '<div class="mensaje-info"><strong>SKU Encontrado:</strong> ' + sku + '</div>' +
+                       '<table><thead><tr><th>Tienda</th><th style="text-align: center;">Uds</th><th style="text-align: center;">Estado</th><th style="text-align: center;">Nota</th></tr></thead><tbody>';
 
-            datos.forEach(dato => {
-                // Solo sumamos a los pendientes si NO está marcado como "Listo" ('3')
+            for (var i = 0; i < datos.length; i++) {
+                var dato = datos[i];
                 if (dato.ok !== '3') {
                     totalUnidades += parseInt(dato.unidades) || 0;
                 }
                 
-                let botonAccion = '';
+                var botonAccion = '';
                 if (dato.ok === '3') {
-                    botonAccion = `<button onclick="deshacerOK(${dato.indiceOriginal}, '${sku}')" class="btn-listo" title="Deshacer"><span class="texto-btn">✓ Listo</span></button>`;
+                    botonAccion = '<button onclick="deshacerOK(' + dato.indiceOriginal + ', \'' + sku + '\')" class="btn-listo" title="Deshacer"><span class="texto-btn">✓ Listo</span></button>';
                 } else {
-                    botonAccion = `<button onclick="marcarComoOK(${dato.indiceOriginal}, '${sku}')" class="btn-ok">OK</button>`;
+                    botonAccion = '<button onclick="marcarComoOK(' + dato.indiceOriginal + ', \'' + sku + '\')" class="btn-ok">OK</button>';
                 }
 
-                // Generamos el botón de comentario si hay texto, si no, un guión
-                let comentarioHtml = '-';
+                var comentarioHtml = '-';
                 if (dato.comentario && dato.comentario.trim() !== '') {
-                    const comentarioCodificado = encodeURIComponent(dato.comentario);
-                    comentarioHtml = `<button onclick="abrirModalComentario('${comentarioCodificado}')" class="btn-comentario">Ver Comentario</button>`;
+                    var comentarioCodificado = encodeURIComponent(dato.comentario);
+                    comentarioHtml = '<button onclick="abrirModalComentario(\'' + comentarioCodificado + '\')" class="btn-comentario">💬 Ver</button>';
                 }
 
-                html += `
-                    <tr>
-                        <td><strong>${dato.tienda}</strong></td>
-                        <td style="text-align: center;">${dato.unidades}</td>
-                        <td style="text-align: center; min-width: 90px;">${botonAccion}</td>
-                        <td style="text-align: center;">${comentarioHtml}</td>
-                    </tr>
-                `;
-            });
+                html += '<tr>' +
+                        '<td><strong>' + dato.tienda + '</strong></td>' +
+                        '<td style="text-align: center;">' + dato.unidades + '</td>' +
+                        '<td style="text-align: center; min-width: 90px;">' + botonAccion + '</td>' +
+                        '<td style="text-align: center;">' + comentarioHtml + '</td>' +
+                        '</tr>';
+            }
 
-            html += `
-                    </tbody>
-                    <tfoot style="background-color: #f8fafc; font-weight: bold;">
-                        <tr>
-                            <td style="text-align: right;">TOTAL PENDIENTES:</td>
-                            <td style="text-align: center;">${totalUnidades}</td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            `;
+            html += '</tbody><tfoot style="background-color: #f8fafc; font-weight: bold;"><tr>' +
+                    '<td style="text-align: right;">TOTAL PENDIENTES:</td><td style="text-align: center;">' + totalUnidades + '</td><td></td><td></td>' +
+                    '</tr></tfoot></table>';
 
             divResultado.innerHTML = html;
         }
 
         function mostrarVistaGeneral() {
-            const divResultado = document.getElementById('resultado');
+            var divResultado = document.getElementById('resultado');
             divResultado.style.display = 'block';
             divResultado.style.border = 'none';
 
@@ -644,17 +626,16 @@
                 return;
             }
 
-            // Agrupar datos por tienda
-            const tiendas = {};
-            let totalGeneral = 0;
+            var tiendas = {};
+            var totalGeneral = 0;
 
-            for (let i = 1; i < lineasTXT.length; i++) {
-                const linea = lineasTXT[i].trim();
+            for (var i = 1; i < lineasTXT.length; i++) {
+                var linea = lineasTXT[i].trim();
                 if (!linea) continue;
 
-                const partes = linea.split(';');
+                var partes = linea.split(';');
                 if (partes.length >= 2) {
-                    const tienda = partes[0] || 'Sin Tienda';
+                    var tienda = partes[0] || 'Sin Tienda';
                     if (!tiendas[tienda]) tiendas[tienda] = [];
                     tiendas[tienda].push({
                         indiceOriginal: i,
@@ -666,83 +647,71 @@
                 }
             }
 
-            let html = '<h3 style="margin-top:0; color:#334155; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; font-size: 1.2rem;">Vista General por Tiendas</h3>';
+            var html = '<h3 style="margin-top:0; color:#334155; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; font-size: 1.2rem;">Vista General por Tiendas</h3>';
+            var tiendasOrdenadas = Object.keys(tiendas).sort();
 
-            // Ordenar tiendas alfabéticamente
-            const tiendasOrdenadas = Object.keys(tiendas).sort();
+            for (var t = 0; t < tiendasOrdenadas.length; t++) {
+                var nombreTienda = tiendasOrdenadas[t];
+                var items = tiendas[nombreTienda];
+                var udsTienda = 0;
+                var itemsHtml = '';
 
-            for (const tienda of tiendasOrdenadas) {
-                const items = tiendas[tienda];
-                let udsTienda = 0;
-                let itemsHtml = '';
-
-                items.forEach(item => {
-                    // Solo sumamos unidades si el artículo NO está completado ('3')
+                for (var j = 0; j < items.length; j++) {
+                    var item = items[j];
+                    
                     if (item.ok !== '3') {
                         udsTienda += parseInt(item.unidades) || 0;
                         totalGeneral += parseInt(item.unidades) || 0;
                     }
 
-                    let botonAccion = '';
+                    var botonAccion = '';
                     if (item.ok === '3') {
-                        botonAccion = `<button onclick="deshacerOK(${item.indiceOriginal}, '')" class="btn-listo" style="padding: 4px 8px; font-size: 12px;" title="Deshacer"><span class="texto-btn">✓ Listo</span></button>`;
+                        botonAccion = '<button onclick="deshacerOK(' + item.indiceOriginal + ', \'\')" class="btn-listo" style="padding: 4px 8px; font-size: 12px;" title="Deshacer"><span class="texto-btn">✓ Listo</span></button>';
                     } else {
-                        botonAccion = `<button onclick="marcarComoOK(${item.indiceOriginal}, '')" class="btn-ok" style="padding: 4px 8px; font-size: 12px;">OK</button>`;
+                        botonAccion = '<button onclick="marcarComoOK(' + item.indiceOriginal + ', \'\')" class="btn-ok" style="padding: 4px 8px; font-size: 12px;">OK</button>';
                     }
 
-                    itemsHtml += `
-                        <tr>
-                            <td style="padding: 8px 15px; border-bottom: 1px solid #e2e8f0;">
-                                <strong>${item.sku}</strong>
-                                ${item.comentario ? `<br><span style="font-size:0.75rem; color:#64748b;">${item.comentario}</span>` : ''}
-                            </td>
-                            <td style="padding: 8px 15px; border-bottom: 1px solid #e2e8f0; text-align: center;">${item.unidades}</td>
-                            <td style="padding: 8px 15px; border-bottom: 1px solid #e2e8f0; text-align: center; min-width: 90px;">${botonAccion}</td>
-                        </tr>
-                    `;
-                });
+                    var comentarioHtml = '';
+                    if (item.comentario && item.comentario.trim() !== '') {
+                        var comentarioCodificado = encodeURIComponent(item.comentario);
+                        comentarioHtml = '<br><button onclick="abrirModalComentario(\'' + comentarioCodificado + '\')" class="btn-comentario" style="margin-top: 6px; font-size: 0.75rem; padding: 4px 8px;">💬 Ver nota</button>';
+                    }
 
-                html += `
-                    <div class="tienda-grupo">
-                        <div class="tienda-header">
-                            <span>Tienda: ${tienda}</span>
-                            <span style="font-size: 0.9rem; font-weight: normal; background: white; padding: 2px 8px; border-radius: 12px;">${udsTienda} uds pendientes</span>
-                        </div>
-                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                            <thead>
-                                <tr>
-                                    <th style="padding: 8px 15px; border-bottom: 1px solid #cbd5e1; background: #f1f5f9; text-align: left;">SKU</th>
-                                    <th style="padding: 8px 15px; border-bottom: 1px solid #cbd5e1; background: #f1f5f9; text-align: center;">Uds</th>
-                                    <th style="padding: 8px 15px; border-bottom: 1px solid #cbd5e1; background: #f1f5f9; text-align: center;">Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${itemsHtml}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
+                    itemsHtml += '<tr>' +
+                                 '<td style="padding: 8px 15px; border-bottom: 1px solid #e2e8f0;"><strong>' + item.sku + '</strong>' + comentarioHtml + '</td>' +
+                                 '<td style="padding: 8px 15px; border-bottom: 1px solid #e2e8f0; text-align: center;">' + item.unidades + '</td>' +
+                                 '<td style="padding: 8px 15px; border-bottom: 1px solid #e2e8f0; text-align: center; min-width: 90px;">' + botonAccion + '</td>' +
+                                 '</tr>';
+                }
+
+                html += '<div class="tienda-grupo">' +
+                        '<div class="tienda-header">' +
+                        '<span>📍 Tienda: ' + nombreTienda + '</span>' +
+                        '<span style="font-size: 0.9rem; font-weight: normal; background: white; padding: 2px 8px; border-radius: 12px;">' + udsTienda + ' uds pendientes</span>' +
+                        '</div>' +
+                        '<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">' +
+                        '<thead><tr><th style="padding: 8px 15px; border-bottom: 1px solid #cbd5e1; background: #f1f5f9; text-align: left;">SKU</th><th style="padding: 8px 15px; border-bottom: 1px solid #cbd5e1; background: #f1f5f9; text-align: center;">Uds</th><th style="padding: 8px 15px; border-bottom: 1px solid #cbd5e1; background: #f1f5f9; text-align: center;">Estado</th></tr></thead>' +
+                        '<tbody>' + itemsHtml + '</tbody>' +
+                        '</table></div>';
             }
 
-            html += `<div style="margin-top: 20px; text-align: right; font-weight: bold; font-size: 1.1rem; color: #0f172a;">Total Unidades Pendientes: ${totalGeneral}</div>`;
+            html += '<div style="margin-top: 20px; text-align: right; font-weight: bold; font-size: 1.1rem; color: #0f172a;">Total Unidades Pendientes: ' + totalGeneral + '</div>';
             
             divResultado.innerHTML = html;
         }
 
         function marcarComoOK(indice, skuBuscado) {
-            let partes = lineasTXT[indice].split(';');
-            while(partes.length < 6) partes.push(""); // Añadimos una columna extra (índice 5) para guardar el estado original
+            var partes = lineasTXT[indice].split(';');
+            while(partes.length < 6) partes.push(""); 
             
-            // Si no habíamos guardado el valor original, lo guardamos ahora en la columna 5
             if (!partes[5]) partes[5] = partes[3]; 
             
             partes[3] = "3"; 
             lineasTXT[indice] = partes.join(';'); 
             
-            localStorage.setItem('descuadresTXTData', JSON.stringify(lineasTXT));
+            intentarGuardarCache();
             verificarSiHayCambiosPendientes();
 
-            // Si hay un skuBuscado, volvemos a la vista de búsqueda, si no, a la vista general
             if (skuBuscado) {
                 document.getElementById('skuInput').value = skuBuscado;
                 buscarSKU(true);
@@ -751,11 +720,9 @@
             }
         }
 
-        // ¡NUEVO!: Función para revertir el "Listo" al estado original
         function deshacerOK(indice, skuBuscado) {
-            let partes = lineasTXT[indice].split(';');
+            var partes = lineasTXT[indice].split(';');
             
-            // Si teníamos guardado el estado original (índice 5), lo restauramos. Si no, lo dejamos en '0'.
             if (partes.length >= 6 && partes[5] !== "") {
                 partes[3] = partes[5]; 
             } else {
@@ -764,10 +731,9 @@
 
             lineasTXT[indice] = partes.join(';'); 
             
-            localStorage.setItem('descuadresTXTData', JSON.stringify(lineasTXT));
+            intentarGuardarCache();
             verificarSiHayCambiosPendientes();
 
-            // Si hay un skuBuscado, volvemos a la vista de búsqueda, si no, a la vista general
             if (skuBuscado) {
                 document.getElementById('skuInput').value = skuBuscado;
                 buscarSKU(true);
@@ -776,82 +742,80 @@
             }
         }
 
-        // Actualizado: Muestra el botón PDF siempre que haya datos cargados
         function verificarSiHayCambiosPendientes() {
             if (lineasTXT.length > 0) {
-                // Ahora usamos 'flex' para que funcione el diseño horizontal
+                // Usamos string vacío si flex da problemas en PDAs muy viejas, sino block
+                document.getElementById('zonaDescarga').style.display = 'block'; 
+                // Fix fallback for flexbox layout on old PDAs:
                 document.getElementById('zonaDescarga').style.display = 'flex';
             } else {
                 document.getElementById('zonaDescarga').style.display = 'none';
             }
         }
 
-        // ¡NUEVO!: Función para generar y descargar el PDF
         function descargarPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            try {
+                var jsPDF = window.jspdf.jsPDF;
+                var doc = new jsPDF();
 
-            // Título del PDF
-            doc.setFontSize(18);
-            doc.text("Reporte de SKUs Pendientes", 14, 22);
-            
-            // Fecha de generación
-            doc.setFontSize(11);
-            doc.setTextColor(100);
-            const fecha = new Date().toLocaleString();
-            doc.text("Generado el: " + fecha, 14, 30);
-
-            // Preparar los datos para la tabla del PDF
-            const tableData = [];
-            for (let i = 1; i < lineasTXT.length; i++) {
-                const linea = lineasTXT[i].trim();
-                if (!linea) continue;
-
-                const partes = linea.split(';');
+                doc.setFontSize(18);
+                doc.text("Reporte de SKUs Pendientes", 14, 22);
                 
-                // Si la columna OK (índice 3) NO es '3', significa que está pendiente
-                if (partes.length >= 4 && partes[3] !== '3') {
-                    tableData.push([
-                        partes[0] || '-', // Tienda
-                        partes[1] || '-', // SKU
-                        partes[2] || '0', // Unidades
-                        partes[4] || ''   // Comentarios
-                    ]);
+                doc.setFontSize(11);
+                doc.setTextColor(100);
+                var fecha = new Date().toLocaleString();
+                doc.text("Generado el: " + fecha, 14, 30);
+
+                var tableData = [];
+                for (var i = 1; i < lineasTXT.length; i++) {
+                    var linea = lineasTXT[i].trim();
+                    if (!linea) continue;
+
+                    var partes = linea.split(';');
+                    
+                    if (partes.length >= 4 && partes[3] !== '3') {
+                        tableData.push([
+                            partes[0] || '-', 
+                            partes[1] || '-', 
+                            partes[2] || '0', 
+                            partes[4] || ''   
+                        ]);
+                    }
                 }
+
+                doc.autoTable({
+                    startY: 38,
+                    head: [['Tienda (TSA)', 'SKU', 'Uds', 'Comentarios']],
+                    body: tableData,
+                    theme: 'striped',
+                    styles: { fontSize: 9, cellPadding: 3 },
+                    headStyles: { fillColor: [37, 99, 235], textColor: 255 },
+                    columnStyles: {
+                        0: { cellWidth: 35 },
+                        1: { cellWidth: 45 },
+                        2: { cellWidth: 15, halign: 'center' },
+                        3: { cellWidth: 'auto' }
+                    }
+                });
+
+                doc.save('SKUs_Pendientes.pdf');
+            } catch(e) {
+                alert("No se pudo generar el PDF. Es posible que el firewall de la PDA bloquee las librerías necesarias.");
             }
-
-            // Generar la tabla usando autoTable
-            doc.autoTable({
-                startY: 38,
-                head: [['Tienda (TSA)', 'SKU', 'Uds', 'Comentarios']],
-                body: tableData,
-                theme: 'striped',
-                styles: { fontSize: 9, cellPadding: 3 },
-                headStyles: { fillColor: [37, 99, 235], textColor: 255 },
-                columnStyles: {
-                    0: { cellWidth: 35 },
-                    1: { cellWidth: 45 },
-                    2: { cellWidth: 15, halign: 'center' },
-                    3: { cellWidth: 'auto' }
-                }
-            });
-
-            // Guardar el archivo en el ordenador/móvil
-            doc.save('SKUs_Pendientes.pdf');
         }
 
         function mostrarError(mensaje) {
-            const divResultado = document.getElementById('resultado');
+            var divResultado = document.getElementById('resultado');
             divResultado.style.display = 'block';
             divResultado.style.border = 'none';
-            divResultado.innerHTML = `<div class="mensaje-error">${mensaje}</div>`;
+            divResultado.innerHTML = '<div class="mensaje-error">' + mensaje + '</div>';
         }
 
         function mostrarToast(mensaje) {
-            const toast = document.getElementById('toastNotificacion');
+            var toast = document.getElementById('toastNotificacion');
             toast.innerText = mensaje;
             toast.style.opacity = '1';
-            setTimeout(() => {
+            setTimeout(function() {
                 toast.style.opacity = '0';
             }, 3000);
         }
